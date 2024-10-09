@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽象畫生成器</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        h1 {
+            margin: 20px 0 10px;
+            font-size: 2em;
+        }
+        h2 {
+            margin: 10px 0;
+            font-size: 1.5em;
+        }
+        .color-selection, .shape-selection {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .color-option, .shape-option {
+            margin: 10px;
+        }
+        .color-option label {
+            width: 40px;
+            height: 40px;
+            display: inline-block;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .shape-option {
+            width: 60px; 
+            height: 60px; 
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border 0.2s;
+        }
+        .shape-option:hover {
+            border: 2px solid #333;
+        }
+        .selected {
+            border: 2px solid #000;
+        }
+        .hidden {
+            display: none;
+        }
+        .canvas {
+            position: relative;
+            width: 880px; /* 22列 * 40px */
+            height: 400px; /* 10行 * 40px */
+            border: 1px solid #333;
+            display: grid;
+            grid-template-columns: repeat(22, 40px); /* 22列 */
+            grid-template-rows: repeat(10, 40px); /* 10行 */
+        }
+        .shape {
+            width: 40px; 
+            height: 40px; 
+            position: absolute; 
+        }
+        button {
+            margin-top: 20px; /* 調整按鈕與畫布的距離 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>抽象畫生成器</h1>
+
+        <div id="colorStage">
+            <h2>選擇兩個顏色</h2>
+            <div class="color-selection">
+                <div class="color-option">
+                    <input type="checkbox" id="color1" value="#ff6f61" />
+                    <label for="color1" style="background: #ff6f61;"></label>
+                </div>
+                <div class="color-option">
+                    <input type="checkbox" id="color2" value="#6a82fb" />
+                    <label for="color2" style="background: #6a82fb;"></label>
+                </div>
+                <div class="color-option">
+                    <input type="checkbox" id="color3" value="#ffcc5c" />
+                    <label for="color3" style="background: #ffcc5c;"></label>
+                </div>
+                <div class="color-option">
+                    <input type="checkbox" id="color4" value="#88d8b0" />
+                    <label for="color4" style="background: #88d8b0;"></label>
+                </div>
+            </div>
+            <button onclick="nextToShapeStage()">下一步: 選擇圖案</button>
+        </div>
+
+        <div id="shapeStage" class="hidden">
+            <h2>選擇圖案</h2>
+            <div class="shape-selection">
+                <div class="shape-option" style="background: #777; border-radius: 50%;" onclick="selectShape('circle', this)"></div>
+                <div class="shape-option" style="background: #777;" onclick="selectShape('square', this)"></div>
+                <div class="shape-option" style="background: #777; border-radius: 20%;" onclick="selectShape('rounded-square', this)"></div>
+            </div>
+            <button onclick="generateArt()">生成抽象畫</button>
+        </div>
+
+        <div id="resultStage" class="hidden">
+            <h2>生成的抽象畫</h2>
+            <div id="artCanvas" class="canvas"></div>
+            <button onclick="resetToMain()">返回主畫面</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedColors = [];
+        let selectedShape = '';
+
+        function nextToShapeStage() {
+            selectedColors = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => checkbox.value);
+            if (selectedColors.length !== 2) {
+                alert('請選擇兩個顏色才能進行下一步');
+                return;
+            }
+            document.getElementById('colorStage').classList.add('hidden');
+            document.getElementById('shapeStage').classList.remove('hidden');
+        }
+
+        function selectShape(shape, element) {
+            selectedShape = shape;
+            const shapeOptions = document.querySelectorAll('.shape-option');
+            shapeOptions.forEach(option => option.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        function createGradientColor(color1, color2) {
+            return `linear-gradient(45deg, ${color1}, ${color2})`;
+        }
+
+        function generateArt() {
+            if (selectedShape === '') {
+                alert('請選擇一個圖案');
+                return;
+            }
+
+            const artCanvas = document.getElementById('artCanvas');
+            artCanvas.innerHTML = '';
+
+            const shapePositions = [];
+            const totalShapes = 220; // 總共生成的形狀數量
+
+            for (let i = 0; i < totalShapes; i++) {
+                let positionX, positionY;
+                do {
+                    positionX = Math.floor(Math.random() * 22) * 40; // 22列
+                    positionY = Math.floor(Math.random() * 10) * 40; // 10行
+                } while (shapePositions.some(pos => pos.x === positionX && pos.y === positionY));
+
+                shapePositions.push({ x: positionX, y: positionY });
+
+                const shapeElement = document.createElement('div');
+                shapeElement.className = 'shape';
+                shapeElement.style.background = createGradientColor(
+                    selectedColors[Math.floor(Math.random() * 2)],
+                    selectedColors[Math.floor(Math.random() * 2)]
+                );
+                shapeElement.style.left = positionX + 'px';
+                shapeElement.style.top = positionY + 'px';
+
+                if (selectedShape === 'circle') {
+                    shapeElement.style.borderRadius = '50%';
+                } else if (selectedShape === 'square') {
+                    shapeElement.style.borderRadius = '0';
+                } else if (selectedShape === 'rounded-square') {
+                    shapeElement.style.borderRadius = '20%';
+                }
+
+                artCanvas.appendChild(shapeElement);
+            }
+
+            document.getElementById('shapeStage').classList.add('hidden');
+            document.getElementById('resultStage').classList.remove('hidden');
+        }
+
+        function resetToMain() {
+            document.getElementById('colorStage').classList.remove('hidden');
+            document.getElementById('shapeStage').classList.add('hidden');
+            document.getElementById('resultStage').classList.add('hidden');
+            selectedColors = [];
+            selectedShape = '';
+        }
+    </script>
+</body>
+</html>
